@@ -14,10 +14,10 @@
 
 **Independent Test**: The repository should contain the uv-managed Python project metadata, environment template, ignore rules, and a documented local tunnel setup before any business logic is added.
 
-- [ ] T001 [P] Inicializar o projeto Python com uv em pyproject.toml e src/alfabot/__init__.py
-- [ ] T002 [P] Registrar variáveis seguras em .env.example e bloquear segredos em .gitignore
-- [ ] T003 [P] Documentar o roteamento local com Hookdeck em specs/001-alfabot-marajoara/quickstart.md
-- [ ] T004 [P] Criar a estrutura inicial de pastas src/alfabot/, tests/ e deploy/ conforme o plano em specs/001-alfabot-marajoara/plan.md
+- [X] T001 [P] Inicializar o projeto Python com uv em pyproject.toml e src/alfabot/__init__.py
+- [X] T002 [P] Registrar variáveis seguras em .env.example e bloquear segredos em .gitignore
+- [X] T003 [P] Documentar o roteamento local com Hookdeck em specs/001-alfabot-marajoara/quickstart.md
+- [X] T004 [P] Criar a estrutura inicial de pastas src/alfabot/, tests/ e deploy/ conforme o plano em specs/001-alfabot-marajoara/plan.md
 
 ---
 
@@ -27,12 +27,12 @@
 
 **Independent Test**: The Flask factory, configuration loader, database bootstrap, and service adapters should import cleanly and expose testable seams without touching external services.
 
-- [ ] T005 [P] Implement configuration loading, .env integration, and loguru bootstrap em src/alfabot/config.py and src/alfabot/infra/logging.py
-- [ ] T006 [P] Create the Flask application factory and register the /webhook blueprint in src/alfabot/app.py and src/alfabot/web/routes.py
-- [ ] T007 [P] Configure SQLAlchemy engine, session factory, and base metadata in src/alfabot/infra/db.py
-- [ ] T008 [P] Define learner, interaction, and enum models in src/alfabot/domain/enums.py and src/alfabot/domain/models.py
-- [ ] T009 [P] Create client shells for Meta, Whisper, Ollama, and Chroma in src/alfabot/infra/meta_client.py, src/alfabot/infra/whisper_client.py, src/alfabot/infra/ollama_client.py, and src/alfabot/infra/chroma.py
-- [ ] T010 [P] Add prompt assembly scaffolding in src/alfabot/prompts/system_prompt.py and src/alfabot/services/response_builder.py
+- [X] T005 [P] Implement configuration loading, .env integration, and loguru bootstrap em src/alfabot/config.py and src/alfabot/infra/logging.py
+- [X] T006 [P] Create the Flask application factory and register the /webhook blueprint in src/alfabot/app.py and src/alfabot/web/routes.py
+- [X] T007 [P] Configure SQLAlchemy engine, session factory, and base metadata in src/alfabot/infra/db.py
+- [X] T008 [P] Define learner, interaction, and enum models in src/alfabot/domain/enums.py and src/alfabot/domain/models.py
+- [X] T009 [P] Create client shells for Meta, Whisper, Ollama, and Chroma in src/alfabot/infra/meta_client.py, src/alfabot/infra/whisper_client.py, src/alfabot/infra/ollama_client.py, and src/alfabot/infra/chroma.py
+- [X] T010 [P] Add prompt assembly scaffolding in src/alfabot/prompts/system_prompt.py and src/alfabot/services/response_builder.py
 
 ---
 
@@ -44,15 +44,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Add an integration test for first-contact onboarding in tests/integration/test_onboarding_flow.py
-- [ ] T012 [P] [US1] Add a unit test for interactive button mapping in tests/unit/test_onboarding_service.py
+- [X] T011 [P] [US1] Add an integration test for first-contact onboarding in tests/integration/test_onboarding_flow.py
+- [X] T012 [P] [US1] Add a unit test for interactive button mapping in tests/unit/test_onboarding_service.py
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement first-contact detection and onboarding state transitions in src/alfabot/services/onboarding_service.py
-- [ ] T014 [US1] Persist learner level selection and onboarding state in src/alfabot/services/profile_service.py and src/alfabot/domain/models.py
-- [ ] T015 [US1] Render onboarding button messages in src/alfabot/services/response_builder.py and src/alfabot/infra/meta_client.py
-- [ ] T016 [US1] Route new-user webhook events through the onboarding path in src/alfabot/services/webhook_processor.py
+- [X] T013 [US1] Implement first-contact detection and onboarding state transitions in src/alfabot/services/onboarding_service.py
+- [X] T014 [US1] Persist learner level selection and onboarding state in src/alfabot/services/profile_service.py and src/alfabot/domain/models.py
+- [X] T015 [US1] Render onboarding button messages in src/alfabot/services/response_builder.py and src/alfabot/infra/meta_client.py
+- [X] T016 [US1] Route new-user webhook events through the onboarding path in src/alfabot/services/webhook_processor.py
 
 ---
 
@@ -64,16 +64,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T017 [P] [US2] Add a unit test for message parsing in tests/unit/test_message_parser.py
-- [ ] T018 [P] [US2] Add a unit test for level-aware prompt assembly in tests/unit/test_response_builder.py
-- [ ] T019 [P] [US2] Add an integration test for text and audio happy paths in tests/integration/test_message_pipeline.py
+- [X] T017 [P] [US2] Add a unit test for message parsing in tests/unit/test_message_parser.py
+- [X] T018 [P] [US2] Add a unit test for level-aware prompt assembly in tests/unit/test_response_builder.py
+- [X] T019 [P] [US2] Add an integration test for text and audio happy paths in tests/integration/test_message_pipeline.py
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement payload parsing for text, audio, and interactive replies in src/alfabot/services/message_parser.py
-- [ ] T021 [US2] Implement OGG download and CPU Whisper transcription in src/alfabot/services/webhook_processor.py and src/alfabot/infra/whisper_client.py
-- [ ] T022 [US2] Implement level-aware prompt composition in src/alfabot/prompts/system_prompt.py and src/alfabot/services/response_builder.py
-- [ ] T023 [US2] Connect profile lookup to the adaptive response pipeline in src/alfabot/services/profile_service.py and src/alfabot/services/webhook_processor.py
+- [X] T020 [US2] Implement payload parsing for text, audio, and interactive replies in src/alfabot/services/message_parser.py
+- [X] T021 [US2] Implement OGG download and CPU Whisper transcription in src/alfabot/services/webhook_processor.py and src/alfabot/infra/whisper_client.py
+- [X] T022 [US2] Implement level-aware prompt composition in src/alfabot/prompts/system_prompt.py and src/alfabot/services/response_builder.py
+- [X] T023 [US2] Connect profile lookup to the adaptive response pipeline in src/alfabot/services/profile_service.py and src/alfabot/services/webhook_processor.py
 
 ---
 
@@ -85,17 +85,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T024 [P] [US3] Add a contract test for outbound Meta text and button payloads in tests/contract/test_meta_client.py
-- [ ] T025 [P] [US3] Add a unit test for Chroma semantic search in tests/unit/test_rag_service.py
-- [ ] T026 [P] [US3] Add an integration test for RAG-enriched response dispatch in tests/integration/test_rag_pipeline.py
+- [X] T024 [P] [US3] Add a contract test for outbound Meta text and button payloads in tests/contract/test_meta_client.py
+- [X] T025 [P] [US3] Add a unit test for Chroma semantic search in tests/unit/test_rag_service.py
+- [X] T026 [P] [US3] Add an integration test for RAG-enriched response dispatch in tests/integration/test_rag_pipeline.py
 
 ### Implementation for User Story 3
 
-- [ ] T027 [US3] Implement Chroma ingestion and semantic search in src/alfabot/infra/chroma.py and src/alfabot/services/rag_service.py
-- [ ] T028 [US3] Add Marajoara corpus loading scripts in scripts/load_marajoara_corpus.py
-- [ ] T029 [US3] Inject Marajoara retrieval results into the system prompt in src/alfabot/services/response_builder.py
-- [ ] T030 [US3] Implement manual requests-based Meta sender for text and button payloads in src/alfabot/infra/meta_client.py
-- [ ] T031 [US3] Wire the Parser → Whisper → Profile → ChromaDB → Ollama → Meta chain in src/alfabot/services/webhook_processor.py
+- [X] T027 [US3] Implement Chroma ingestion and semantic search in src/alfabot/infra/chroma.py and src/alfabot/services/rag_service.py
+- [X] T028 [US3] Add Marajoara corpus loading scripts in scripts/load_marajoara_corpus.py
+- [X] T029 [US3] Inject Marajoara retrieval results into the system prompt in src/alfabot/services/response_builder.py
+- [X] T030 [US3] Implement manual requests-based Meta sender for text and button payloads in src/alfabot/infra/meta_client.py
+- [X] T031 [US3] Wire the Parser → Whisper → Profile → ChromaDB → Ollama → Meta chain in src/alfabot/services/webhook_processor.py
 
 ---
 
