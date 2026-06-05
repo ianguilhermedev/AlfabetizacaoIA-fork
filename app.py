@@ -2,6 +2,8 @@ import flask
 import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+from src.alfabot.models.database import SessionLocal, LearnerProfile
+from src.alfabot.services.whatsapp_service import enviar_mensagem_texto
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -25,10 +27,50 @@ def verificar_webhook():
 
 @app.route('/webhook', methods=['POST'])
 def receber_mensagem():
-    """Rota para receber as mensagens do WhatsApp"""
     dados = request.json
-    print(f"Mensagem recebida: {dados}")
-    # Por enquanto, apenas confirmamos o recebimento
+    
+    # Navegação segura pela estrutura do JSON da Meta
+    entry = dados.get('entry', [])
+    if entry:
+        changes = entry[0].get('changes', [])
+        if changes:
+            value = changes[0].get('value', {})
+            
+            # Verificamos se 'messages' existe (pode ser notificação de leitura/entrega)
+            messages = value.get('messages')
+            
+            if messages:
+                mensagem_info = messages[0]
+                numero = mensagem_info.get('from')
+                
+                # Verificamos se é realmente texto
+                if mensagem_info.get('type') == 'text':
+                    texto = mensagem_info.get('text', {}).get('body', '')
+                    
+                    # Lógica de Banco de Dados
+                    session = SessionLocal()
+                    try:
+                        # Busca o aluno ou cria um novo
+                        aluno = session.query(LearnerProfile).filter_by(phone_number=numero).first()
+                        
+                        if not aluno:
+                            aluno = LearnerProfile(phone_number=numero, pedagogical_level='iniciante')
+                            session.add(aluno)
+                            session.commit()
+                            print(f"Novo aluno registrado: {numero}")
+                        
+                        nivel_atual = aluno.pedagogical_level
+                        
+                        # Resposta personalizada baseada no nível do aluno
+                        resposta = f"Olá! Seu nível atual é: {nivel_atual}. Você escreveu: {texto}"
+                        enviar_mensagem_texto(numero, resposta)
+                        
+                    except Exception as e:
+                        session.rollback()
+                        print(f"Erro ao processar mensagem no banco: {e}")
+                    finally:
+                        session.close()
+
     return jsonify({"status": "recebido"}), 200
 
 if __name__ == '__main__':
