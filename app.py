@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from src.alfabot.models.database import SessionLocal, LearnerProfile
 from src.alfabot.services.whatsapp_service import enviar_mensagem_texto
 from src.alfabot.services.ai_service import gerar_resposta_ia
-
+from src.alfabot.services.voice_service import baixar_audio, transcrever_audio
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
@@ -28,49 +28,57 @@ def verificar_webhook():
 @app.route('/webhook', methods=['POST'])
 def receber_mensagem():
     dados = request.json
-    
-    # Navegação segura pela estrutura do JSON da Meta
     entry = dados.get('entry', [])
-    if entry:
-        changes = entry[0].get('changes', [])
-        if changes:
-            value = changes[0].get('value', {})
-            messages = value.get('messages')
+    
+    if not entry: return jsonify({"status": "recebido"}), 200
+    
+    value = entry[0].get('changes', [{}])[0].get('value', {})
+    messages = value.get('messages')
+    
+    if messages:
+        mensagem_info = messages[0]
+        numero = mensagem_info.get('from')
+        tipo_msg = mensagem_info.get('type')
+        texto_para_processar = ""
+
+        # --- LÓGICA DE NORMALIZAÇÃO DE ENTRADA ---
+        if tipo_msg == 'text':
+            texto_para_processar = mensagem_info.get('text', {}).get('body', '')
+
+        elif tipo_msg == 'audio':
+            media_id = mensagem_info.get('audio', {}).get('id')
+            token = os.getenv("WHATSAPP_TOKEN") # Certifique-se que o token está no .env
             
-            if messages:
-                mensagem_info = messages[0]
-                numero = mensagem_info.get('from')
+            # Baixa, transcreve e limpa
+            caminho_audio = baixar_audio(media_id, token)
+            texto_para_processar = transcrever_audio(caminho_audio)
+            
+            # Remove o arquivo .ogg após transcrever para economizar espaço
+            if os.path.exists(caminho_audio):
+                os.remove(caminho_audio)
+
+        # --- FLUXO ÚNICO DE PROCESSAMENTO (IA + BANCO) ---
+        if texto_para_processar.strip():
+            session = SessionLocal()
+            try:
+                aluno = session.query(LearnerProfile).filter_by(phone_number=numero).first()
+                if not aluno:
+                    aluno = LearnerProfile(phone_number=numero, pedagogical_level='iniciante')
+                    session.add(aluno)
+                    session.commit()
                 
-                if mensagem_info.get('type') == 'text':
-                    texto = mensagem_info.get('text', {}).get('body', '')
-                    
-                    session = SessionLocal()
-                    try:
-                        # 1. Busca o aluno ou cria um novo
-                        aluno = session.query(LearnerProfile).filter_by(phone_number=numero).first()
-                        
-                        if not aluno:
-                            aluno = LearnerProfile(phone_number=numero, pedagogical_level='iniciante')
-                            session.add(aluno)
-                            session.commit()
-                            print(f"Novo aluno registrado: {numero}")
-                        
-                        nivel_atual = aluno.pedagogical_level
-                        
-                        # 2. Chama o serviço de IA (Ollama)
-                        # O bot agora gera a resposta baseada no nível do aluno
-                        resposta_ia = gerar_resposta_ia(texto, nivel_atual)
-                        
-                        # 3. Envia a resposta gerada pela IA
-                        enviar_mensagem_texto(numero, resposta_ia)
-                        
-                    except Exception as e:
-                        session.rollback()
-                        print(f"Erro ao processar mensagem ou chamar IA: {e}")
-                        # Fallback: Resposta padrão caso a IA falhe
-                        enviar_mensagem_texto(numero, "Olá! Tive um probleminha técnico aqui, mas já estou resolvendo. Pode repetir, por favor?")
-                    finally:
-                        session.close()
+                nivel_atual = aluno.pedagogical_level
+                resposta_ia = gerar_resposta_ia(texto_para_processar, nivel_atual)
+                enviar_mensagem_texto(numero, resposta_ia)
+            except Exception as e:
+                session.rollback()
+                print(f"Erro no processamento: {e}")
+            finally:
+                session.close()
+        else:
+            # Caso o áudio esteja em branco ou corrompido
+            if tipo_msg == 'audio':
+                enviar_mensagem_texto(numero, "Não consegui entender o áudio. Pode gravar novamente, por favor?")
 
     return jsonify({"status": "recebido"}), 200
 
