@@ -1,1 +1,0 @@
-"""Alfabot Marajoara application package."""

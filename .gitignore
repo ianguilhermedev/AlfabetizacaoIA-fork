@@ -1,1 +1,37 @@
+# Venv e Ambientes
+venv/
+.env
+.env.local
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
 
+# Dados e Logs 
+logs/
+*.log
+data/
+*.ogg
+*.tmp
+
+# Banco de Dados e Vetorial
+*.db
+*.sqlite
+chroma/
+chroma.sqlite3
+
+# Secrets e Tokens 
+# Nunca versionar tokens da Meta ou chaves de API
+WHATSAPP_TOKEN
+*.key
+*.pem
+
+# IDE e Sistema Operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários do Hookdeck
+hookdeck-config.json
