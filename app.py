@@ -1,9 +1,9 @@
-import flask
 import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from src.alfabot.models.database import SessionLocal, LearnerProfile
 from src.alfabot.services.whatsapp_service import enviar_mensagem_texto
+from src.alfabot.services.ai_service import gerar_resposta_ia
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -35,22 +35,18 @@ def receber_mensagem():
         changes = entry[0].get('changes', [])
         if changes:
             value = changes[0].get('value', {})
-            
-            # Verificamos se 'messages' existe (pode ser notificação de leitura/entrega)
             messages = value.get('messages')
             
             if messages:
                 mensagem_info = messages[0]
                 numero = mensagem_info.get('from')
                 
-                # Verificamos se é realmente texto
                 if mensagem_info.get('type') == 'text':
                     texto = mensagem_info.get('text', {}).get('body', '')
                     
-                    # Lógica de Banco de Dados
                     session = SessionLocal()
                     try:
-                        # Busca o aluno ou cria um novo
+                        # 1. Busca o aluno ou cria um novo
                         aluno = session.query(LearnerProfile).filter_by(phone_number=numero).first()
                         
                         if not aluno:
@@ -61,13 +57,18 @@ def receber_mensagem():
                         
                         nivel_atual = aluno.pedagogical_level
                         
-                        # Resposta personalizada baseada no nível do aluno
-                        resposta = f"Olá! Seu nível atual é: {nivel_atual}. Você escreveu: {texto}"
-                        enviar_mensagem_texto(numero, resposta)
+                        # 2. Chama o serviço de IA (Ollama)
+                        # O bot agora gera a resposta baseada no nível do aluno
+                        resposta_ia = gerar_resposta_ia(texto, nivel_atual)
+                        
+                        # 3. Envia a resposta gerada pela IA
+                        enviar_mensagem_texto(numero, resposta_ia)
                         
                     except Exception as e:
                         session.rollback()
-                        print(f"Erro ao processar mensagem no banco: {e}")
+                        print(f"Erro ao processar mensagem ou chamar IA: {e}")
+                        # Fallback: Resposta padrão caso a IA falhe
+                        enviar_mensagem_texto(numero, "Olá! Tive um probleminha técnico aqui, mas já estou resolvendo. Pode repetir, por favor?")
                     finally:
                         session.close()
 
