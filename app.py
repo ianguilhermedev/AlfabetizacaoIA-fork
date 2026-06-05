@@ -1,14 +1,23 @@
 import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from src.alfabot.models.database import SessionLocal, LearnerProfile
+# Adicionado 'inicializar_banco' ao seu import:
+from src.alfabot.models.database import SessionLocal, LearnerProfile, inicializar_banco
 from src.alfabot.services.whatsapp_service import enviar_mensagem_texto
 from src.alfabot.services.ai_service import gerar_resposta_ia
 from src.alfabot.services.voice_service import baixar_audio, transcrever_audio
+
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
 app = Flask(__name__)
+
+# --- INICIALIZAÇÃO DO BANCO ---
+# Isso garante que a tabela 'learner_profiles' seja criada automaticamente
+# antes do servidor começar a responder requisições.
+with app.app_context():
+    inicializar_banco()
+    print("Banco de dados verificado e tabelas criadas com sucesso.")
 
 # Obtém o token de verificação que definimos no .env
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
@@ -47,7 +56,7 @@ def receber_mensagem():
 
         elif tipo_msg == 'audio':
             media_id = mensagem_info.get('audio', {}).get('id')
-            token = os.getenv("WHATSAPP_TOKEN") # Certifique-se que o token está no .env
+            token = os.getenv("WHATSAPP_TOKEN")
             
             # Baixa, transcreve e limpa
             caminho_audio = baixar_audio(media_id, token)
