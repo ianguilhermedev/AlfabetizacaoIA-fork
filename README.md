@@ -1,39 +1,41 @@
-```markdown
 # Alfabot Marajoara
 
-O Alfabot Marajoara é um assistente educacional baseado em inteligência artificial generativa voltado para o processo de alfabetização de jovens e adultos. O grande diferencial do projeto é a utilização da cultura, tradições, fauna e flora da região do Marajó como base de conteúdo para o aprendizado, promovendo a valorização da identidade local e o sentimento de pertença.
+O **Alfabot Marajoara** é um backend Python projetado para atuar como um tutor de alfabetização inteligente via WhatsApp. O projeto utiliza IA generativa local e RAG (Retrieval-Augmented Generation) com base cultural marajoara para oferecer suporte pedagógico personalizado.
 
-Desenvolvido sob a premissa de ser 100% gratuito e de código aberto, o sistema foi projetado para rodar localmente ou em servidores institucionais (como os da UFPA), sem dependência de APIs proprietárias pagas para processamento de inteligência artificial.
+## Funcionalidades Implementadas
+* **Webhooks Assíncronos:** Processamento de mensagens via WhatsApp Cloud API com resposta imediata para evitar timeouts, utilizando *threading* para processamento pesado em segundo plano.
+* **Pipeline de IA Local:**
+    * **Transcrição:** Conversão de áudios do WhatsApp para texto usando o *Faster-Whisper* (CPU).
+    * **Geração de Texto:** Respostas pedagógicas contextuais geradas pelo *Llama 3.2* via *Ollama*.
+* **Memória Cultural (RAG):** Busca semântica integrada com *ChromaDB* para recuperar conteúdos sobre a cultura marajoara (fauna, lendas, história), garantindo respostas culturalmente alinhadas.
+* **Gestão de Aprendizado:** Banco de dados SQLite com SQLAlchemy para mapear perfis, níveis de leitura (iniciante, básico, intermediário) e histórico de interações.
 
-## Objetivos e Abordagem Pedagógica
+## Estrutura do Projeto
+A estrutura foi organizada para manter a lógica de negócio separada da integração com APIs externas (Meta):
 
-O projeto foi estruturado para atender demandas específicas de acessibilidade e design instrucional adequado para o público em processo de alfabetização:
+```text
+/alfabot-marajoara
+├── app/
+│   ├── models/          # Modelos de dados (SQLAlchemy)
+│   ├── services/        # Lógica de IA, Voz, RAG e WhatsApp
+│   ├── routes/          # Definição dos Webhooks (Flask)
+│   └── database.py      # Configuração do SQLite
+├── data/                # Artefatos de áudio temporários
+├── deploy/              # Configurações para produção (Systemd, Gunicorn)
+├── tests/               # Testes unitários e de integração (Pytest)
+├── .env.example         # Template de variáveis de ambiente
+├── main.py              # Ponto de entrada da aplicação
+└── pyproject.toml       # Dependências gerenciadas pelo uv
+## Tecnologias
+* **Backend:** Python 3, Flask, Gunicorn.
+* **IA/ML:** Ollama (Llama 3.2), Faster-Whisper, ChromaDB.
+* **Database:** SQLite, SQLAlchemy.
+* **Observabilidade:** Loguru para monitoramento em produção.
+* **Ferramenta de Build/Gestão:** `uv`.
 
-* **Contextualização Cultural:** O aprendizado de palavras e frases é feito utilizando elementos do cotidiano marajoara, como búfalo, açaí, cerâmica marajoara e lendas locais. Isso torna o ensino mais significativo e próximo da realidade do estudante.
-* **Correção Gentil:** O modelo de linguagem é rigorosamente instruído a nunca utilizar termos punitivos ou desestimulantes, tais como "errado", "incorreto" ou "você errou". Em vez disso, o sistema adota uma abordagem de reforço positivo, incentivando a tentativa e guiando o aluno para a resposta certa de forma acolhedora.
-* **Interface Multimodal Adaptativa:** Como muitos usuários estão aprendendo a ler e escrever, o suporte a áudio é indispensável. O bot aceita mensagens de texto e mensagens de voz, respondendo textualmente de acordo com o nível pedagógico do perfil do aluno.
-
-## Como o Projeto Funciona
-
-O fluxo completo de processamento de uma interação segue as etapas abaixo:
-
-1. **Entrada do Usuário:** O aluno envia uma mensagem de texto ou um áudio gravado no WhatsApp.
-2. **Recepção do Webhook:** A API do WhatsApp Cloud (Meta) dispara um evento HTTP POST contendo o payload da mensagem para o servidor web Flask da aplicação.
-3. **Processamento de Áudio:** Caso o aluno envie um áudio, o sistema baixa o arquivo binário em formato OGG e utiliza o motor local Faster-Whisper para realizar a transcrição fonética precisa para texto em português.
-4. **Gestão de Perfil e Contexto:** O sistema consulta o banco de dados SQLite para identificar o histórico do aluno pelo número de telefone, determinando seu nível pedagógico atual (Iniciante, Básico ou Intermediário).
-5. **Recuperação Avançada (RAG):** O texto da mensagem é convertido em um vetor numérico. O banco vetorial ChromaDB realiza uma busca semântica para extrair os fragmentos de texto mais relevantes sobre a cultura marajoara armazenados na base de conhecimento local.
-6. **Inferência da IA:** O sistema monta um prompt dinâmico que une as regras do sistema (Abordagem Pedagógica e Correção Gentil), o nível do aluno, o contexto histórico e as informações resgatadas pelo RAG. Esse bloco é enviado ao Ollama, que processa localmente o modelo Llama 3.2 e gera a resposta educativa.
-7. **Retorno ao Aluno:** A resposta gerada é empacotada e enviada de volta ao celular do aluno via requisição HTTP manual utilizando a biblioteca Requests direcionada à API de mensagens da Meta.
-
-## Arquitetura e Componentes Técnicos
-
-A engenharia do sistema foi modularizada para garantir isolamento de funções, facilidade de manutenção e desempenho em hardware modesto (rodando inteiramente em CPU):
-
-* **Interface e Mensageria:** Integração direta com a API Cloud do WhatsApp (Meta). O envio e recepção de mensagens, incluindo componentes interativos como botões de resposta, são feitos manualmente via requisições HTTP nativas.
-* **Servidor de Aplicação:** Desenvolvido em Python com o micro-framework Flask para gerenciamento de rotas e processamento lógico dos Webhooks. Em ambiente de produção, é servido pelo Gunicorn para suportar concorrência.
-* **Motor de Transcrição:** Utilização do Faster-Whisper executado localmente em modo otimizado para CPU, garantindo rapidez no tratamento de arquivos de voz sem custos externos.
-* **Banco de Dados Relacional:** SQLite gerenciado via SQLAlchemy para persistência leve de metadados, controle de níveis pedagógicos e progresso dos usuários.
-* **Banco de Dados Vetorial:** ChromaDB configurado localmente para o armazenamento de embeddings e execução do pipeline de Geração Aumentada por Recuperação (RAG).
-* **Gerenciamento de Ambiente:** Utilização do gerenciador de pacotes uv para garantir um ambiente virtual Python isolado, rápido e reprodutível.
-
-```
+## Como Executar
+1.  **Configuração:** Instale as dependências com `uv sync`.
+2.  **Ambiente:** Renomeie `.env.example` para `.env` e configure seu `WHATSAPP_TOKEN`.
+3.  **IA:** Certifique-se de que o Ollama esteja rodando localmente (`ollama serve`).
+4.  **Túnel:** Utilize o Hookdeck para expor a porta 5000: `hookdeck listen 5000`.
+5.  **Rodar:** Inicie a aplicação com `uv run python main.py`.
