@@ -8,7 +8,7 @@ __pycache__/
 dist/
 build/
 
-# Dados e Logs 
+# Dados e Logs
 logs/
 *.log
 data/
@@ -21,7 +21,7 @@ data/
 chroma/
 chroma.sqlite3
 
-# Secrets e Tokens 
+# Secrets e Tokens
 # Nunca versionar tokens da Meta ou chaves de API
 WHATSAPP_TOKEN
 *.key
