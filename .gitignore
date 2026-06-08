@@ -12,7 +12,6 @@ src/alfabetizacaoia.egg-info/
 # Dados e Logs
 logs/
 *.log
-data/
 *.ogg
 *.tmp
 
@@ -21,6 +20,7 @@ data/
 *.sqlite
 chroma/
 chroma.sqlite3
+chroma_db
 
 # Secrets e Tokens
 # Nunca versionar tokens da Meta ou chaves de API
