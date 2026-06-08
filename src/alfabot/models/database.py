@@ -3,9 +3,6 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # --- CONFIGURAÇÃO DE CAMINHO ---
-# O ideal é que o banco não fique no OneDrive.
-# Se o erro persistir, altere 'DB_DIR' abaixo para uma pasta fora do OneDrive,
-# como 'C:/alfabot_data/'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR)) # Sobe para a raiz do projeto
 DB_DIR = os.path.join(PROJECT_ROOT, 'data')

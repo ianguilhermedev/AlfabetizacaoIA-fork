@@ -1,8 +1,6 @@
 import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-
-# 1. IMPORTAÇÃO DO LOGURU
 from src.alfabot.logger_config import logger
 
 # Importações do seu projeto
