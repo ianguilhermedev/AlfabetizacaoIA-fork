@@ -1,33 +1,34 @@
 import os
 import requests
-from dotenv import load_dotenv
 
-# Garante que as variáveis de ambiente sejam lidas 
-load_dotenv()
+# Importação do logger unificado do seu projeto
+from src.alfabot.logger_config import logger
+
+# Configurações centralizadas no topo do módulo (evita ler o .env a cada mensagem)
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_ID")
+WHATSAPP_API_VERSION = "v20.0"
+
 
 def enviar_mensagem_texto(phone_number: str, texto: str) -> bool:
     """
     Envia uma mensagem de texto simples via WhatsApp Cloud API.
-    """
-    # Coleta o Token e o Phone ID do arquivo .env
-    token = os.getenv("WHATSAPP_TOKEN")
-    phone_id = os.getenv("WHATSAPP_PHONE_ID")
 
-    # Proteção rápida: avisa se faltar alguma configuração no .env
-    if not token or not phone_id:
-        print("Erro: WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID não configurados no .env")
+    Retorna True se enviada com sucesso, False caso contrário.
+    """
+    # Validação rápida das credenciais configuradas
+    if not WHATSAPP_TOKEN or not WHATSAPP_PHONE_ID:
+        logger.error("WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID não configurados no arquivo .env")
         return False
 
-    # Monta a URL da API da Meta
-    url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
+    # Montagem dos dados da requisição
+    url = f"https://graph.facebook.com/{WHATSAPP_API_VERSION}/{WHATSAPP_PHONE_ID}/messages"
 
-    # Configura o cabeçalho (headers) obrigatório
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
         "Content-Type": "application/json"
     }
 
-    # Monta o corpo da mensagem (payload) no formato JSON exigido
     payload = {
         "messaging_product": "whatsapp",
         "to": phone_number,
@@ -36,18 +37,23 @@ def enviar_mensagem_texto(phone_number: str, texto: str) -> bool:
     }
 
     try:
-        # Fazer a requisição usando requests.post com timeout de segurança
+        # Faz o envio com timeout de segurança de 10 segundos
         resposta = requests.post(url, headers=headers, json=payload, timeout=10)
 
-        # Retorna True se o status for 200 (OK) ou 201 (Created)
-        if resposta.status_code in [200, 201]:
-            print(f"Mensagem enviada com sucesso para {phone_number}!")
-            return True
-        else:
-            # Imprime o erro detalhado da Meta caso algo dê errado
-            print(f"Erro ao enviar mensagem: {resposta.status_code} - {resposta.text}")
-            return False
+        # Dispara automaticamente um HTTPError se o status code for 4xx ou 5xx
+        resposta.raise_for_status()
+
+        logger.info(f"Mensagem enviada com sucesso para {phone_number}!")
+        return True
+
+    except requests.exceptions.HTTPError as e:
+        # Captura erros retornados pela própria API da Meta (ex: número inválido, token expirado)
+        status_code = e.response.status_code if e.response else "N/A"
+        error_text = e.response.text if e.response else str(e)
+        logger.error(f"Erro HTTP da Meta ao enviar para {phone_number}: {status_code} - {error_text}")
+        return False
 
     except requests.exceptions.RequestException as e:
-        print(f"Erro de conexão com a API da Meta: {e}")
+        # Captura erros de rede/infraestrutura (ex: queda de internet, DNS falhou)
+        logger.error(f"Erro de conexão/rede com a API da Meta ao tentar enviar para {phone_number}: {e}")
         return False
