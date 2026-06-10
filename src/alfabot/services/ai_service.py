@@ -9,7 +9,7 @@ OLLAMA_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-# Variável privada para o cliente Gemini (usada na lazy initialization)
+# Variável privada para o cliente Gemini
 _gemini_client = None
 
 
@@ -30,7 +30,10 @@ def _gerar_com_ollama(prompt: str) -> str:
     payload = {"model": OLLAMA_MODEL, "prompt": prompt, "stream": False}
     response = requests.post(OLLAMA_URL, json=payload, timeout=120)
     response.raise_for_status()
-    return response.json().get("response", "").strip()
+
+    # Segurança: garante que tratamos o retorno como string antes de usar strip()
+    conteudo = response.json().get("response")
+    return str(conteudo).strip() if conteudo else ""
 
 
 def _gerar_com_gemini(prompt: str) -> str:
@@ -40,7 +43,10 @@ def _gerar_com_gemini(prompt: str) -> str:
         model=GEMINI_MODEL,
         contents=prompt
     )
-    return response.text.strip()
+
+    # Segurança: response.text pode ser None em casos de erro ou blocos de segurança
+    conteudo = response.text
+    return str(conteudo).strip() if conteudo else ""
 
 
 def gerar_resposta_ia(mensagem_usuario: str, nivel_pedagogico: str = "iniciante") -> str:
