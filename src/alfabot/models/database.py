@@ -1,14 +1,18 @@
-import os
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from pathlib import Path
+from datetime import datetime, timezone
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # --- CONFIGURAÇÃO DE CAMINHO ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR)) # Sobe para a raiz do projeto
-DB_DIR = os.path.join(PROJECT_ROOT, 'data')
+# Resolve o diretório raiz do projeto de forma robusta e cross-platform
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DB_DIR = PROJECT_ROOT / "data"
 
-os.makedirs(DB_DIR, exist_ok=True)
-DB_PATH = os.path.join(DB_DIR, 'alfabot.db')
+# Cria a pasta data automaticamente
+DB_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DB_DIR / "alfabot.db"
+
+# URL de conexão formatada para SQLite
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 Base = declarative_base()
@@ -17,6 +21,7 @@ Base = declarative_base()
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 class LearnerProfile(Base):
     __tablename__ = 'learner_profiles'
 
@@ -24,8 +29,13 @@ class LearnerProfile(Base):
     phone_number = Column(String, unique=True, nullable=False, index=True)
     pedagogical_level = Column(String, default='iniciante')
     onboarding_state = Column(String, default='new')
-    created_at = Column(DateTime, default=func.now())
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    # Uso de datetime do Python com timezone para consistência absoluta
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime,
+                        default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
 
 def inicializar_banco():
     """Cria o arquivo do banco e as tabelas se não existirem."""
