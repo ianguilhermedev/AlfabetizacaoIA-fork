@@ -1,4 +1,5 @@
 import os
+from typing import Any
 import chromadb
 from src.alfabot.logger_config import logger
 
@@ -44,13 +45,19 @@ def buscar_contexto(pergunta: str, n_resultados: int = 2) -> str:
     """Busca os trechos mais relevantes no banco de dados."""
     try:
         collection = _get_collection()
-        resultados = collection.query(
+        resultados: Any = collection.query(
             query_texts=[pergunta],
             n_results=n_resultados
         )
 
-        # Extrai apenas os documentos encontrados
-        documentos = resultados.get('documents', [[]])[0]
+        # Extração segura: verificamos se a chave existe e é uma lista antes de acessar
+        docs_matrix = resultados.get('documents')
+
+        # O ChromaDB retorna uma lista de listas. Precisamos garantir que é uma lista válida.
+        if isinstance(docs_matrix, list) and len(docs_matrix) > 0 and isinstance(docs_matrix[0], list):
+            documentos = docs_matrix[0]
+        else:
+            documentos = []
 
         contexto = "\n".join(documentos)
         logger.info(
