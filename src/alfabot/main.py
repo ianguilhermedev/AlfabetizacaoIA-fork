@@ -87,7 +87,7 @@ def extrair_texto_de_audio(mensagem_info, numero):
     media_id = mensagem_info.get('audio', {}).get('id')
     try:
         token = os.getenv("WHATSAPP_TOKEN")
-        caminho = baixar_audio(media_id, token)
+        caminho = baixar_audio(media_id)
         texto = transcrever_audio(caminho)
 
         # Limpa o arquivo temporário
