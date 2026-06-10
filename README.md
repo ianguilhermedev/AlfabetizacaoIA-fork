@@ -144,4 +144,3 @@ Este projeto é desenvolvido para fins **educacionais e de pesquisa**. Sinta-se 
 **Alfabot Marajoara** — Alfabetizando com inteligência e raiz marajoara. 🇧🇷
 ```
 
-Este README está completo, organizado, visualmente atraente e pronto para uso. Você pode copiá-lo diretamente para o arquivo `README.md` do projeto.
