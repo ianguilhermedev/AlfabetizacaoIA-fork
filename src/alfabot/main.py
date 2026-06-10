@@ -1,5 +1,6 @@
 import os
-from flask import Flask, request, jsonify
+from typing import Any, Tuple, Union
+from flask import Flask, request, jsonify, make_response, Response
 from dotenv import load_dotenv
 from src.alfabot.logger_config import logger
 
@@ -12,36 +13,37 @@ from src.alfabot.services.voice_service import baixar_audio, transcrever_audio
 load_dotenv()
 
 
-def create_app():
+def create_app() -> Flask:
     """Fábrica de Aplicação: Cria e configura o Flask."""
-    app = Flask(__name__)
+    app_instance = Flask(__name__)
 
     # Inicialização do Banco
-    with app.app_context():
+    with app_instance.app_context():
         inicializar_banco()
         logger.info("Banco de dados verificado e tabelas criadas.")
 
     # Registro das rotas
-    app.add_url_rule('/webhook', 'verificar_webhook', verificar_webhook, methods=['GET'])
-    app.add_url_rule('/webhook', 'receber_mensagem', receber_mensagem, methods=['POST'])
+    app_instance.add_url_rule('/webhook', 'verificar_webhook', verificar_webhook, methods=['GET'])
+    app_instance.add_url_rule('/webhook', 'receber_mensagem', receber_mensagem, methods=['POST'])
 
-    return app
+    return app_instance
 
 
 # --- ROTAS ---
 
-def verificar_webhook():
+def verificar_webhook() -> Union[Response, Tuple[Response, int]]:
     """Valida o webhook junto à Meta."""
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
+    mode = request.args.get("hub.mode", "")
+    token = request.args.get("hub.verify_token", "")
+    challenge = request.args.get("hub.challenge", "")
 
     if mode == "subscribe" and token == os.getenv("WHATSAPP_VERIFY_TOKEN"):
-        return challenge, 200
-    return "Token inválido", 403
+        return make_response(str(challenge), 200)
+
+    return make_response("Token inválido", 403)
 
 
-def receber_mensagem():
+def receber_mensagem() -> Tuple[Response, int]:
     """Recebe o POST da Meta e distribui as mensagens para processamento."""
     dados = request.json
     if not dados or 'entry' not in dados:
@@ -55,8 +57,11 @@ def receber_mensagem():
 
 # --- UTILITÁRIOS ---
 
-def _extrair_mensagens(dados):
-    """Achata a estrutura aninhada do JSON da Meta usando um gerador (yield)."""
+def _extrair_mensagens(dados: Any):
+    """Achata a estrutura aninhada do JSON da Meta."""
+    if not isinstance(dados, dict):
+        return
+
     for entry in dados.get('entry', []):
         for change in entry.get('changes', []):
             yield from change.get('value', {}).get('messages', [])
@@ -64,10 +69,10 @@ def _extrair_mensagens(dados):
 
 # --- LÓGICA DE NORMALIZAÇÃO ---
 
-def processar_mensagem_whatsapp(mensagem_info):
+def processar_mensagem_whatsapp(mensagem_info: dict[str, Any]):
     """Orquestra a extração do texto da mensagem e repassa para a regra de negócio."""
-    numero = mensagem_info.get('from')
-    tipo_msg = mensagem_info.get('type')
+    numero = str(mensagem_info.get('from') or "")
+    tipo_msg = str(mensagem_info.get('type') or "")
     texto = ""
 
     if tipo_msg == 'text':
@@ -75,22 +80,27 @@ def processar_mensagem_whatsapp(mensagem_info):
     elif tipo_msg == 'audio':
         texto = extrair_texto_de_audio(mensagem_info, numero)
 
-    # Se não houver texto útil (ex: áudio vazio ou tipo não suportado), encerra
     if not texto.strip():
         return
 
     processar_interacao_aluno(numero, texto)
 
 
-def extrair_texto_de_audio(mensagem_info, numero):
+def extrair_texto_de_audio(mensagem_info: dict[str, Any], numero: str) -> str:
     """Isola a lógica de download, transcrição e limpeza de arquivos de áudio."""
-    media_id = mensagem_info.get('audio', {}).get('id')
+    audio_node = mensagem_info.get('audio')
+
+    if not isinstance(audio_node, dict):
+        return ""
+
+    media_id = audio_node.get('id')
+    if not isinstance(media_id, str):
+        return ""
+
     try:
-        token = os.getenv("WHATSAPP_TOKEN")
         caminho = baixar_audio(media_id)
         texto = transcrever_audio(caminho)
 
-        # Limpa o arquivo temporário
         if os.path.exists(caminho):
             os.remove(caminho)
 
@@ -103,9 +113,8 @@ def extrair_texto_de_audio(mensagem_info, numero):
 
 # --- REGRA DE NEGÓCIO ---
 
-def processar_interacao_aluno(numero, texto):
+def processar_interacao_aluno(numero: str, texto: str):
     """Gerencia o acesso ao banco de dados e a comunicação com a IA."""
-    # O uso do 'with' garante o fechamento automático da sessão (session.close())
     with SessionLocal() as session:
         try:
             aluno = session.query(LearnerProfile).filter_by(phone_number=numero).first()
@@ -122,8 +131,8 @@ def processar_interacao_aluno(numero, texto):
             session.rollback()
 
 
-# --- INICIALIZAÇÃO PARA DESENVOLVIMENTO ---
+# --- INICIALIZAÇÃO ---
 if __name__ == '__main__':
-    app = create_app()
+    flask_app = create_app()
     logger.info("Iniciando o servidor Flask de desenvolvimento na porta 5000...")
-    app.run(port=5000)
+    flask_app.run(port=5000)
